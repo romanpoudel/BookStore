@@ -1,16 +1,28 @@
 import { Op } from "sequelize";
 import bookModel from "../models/bookModel.js";
+import textConstants from "../constants/textConstants.js";
+import urlConstants from "./urlConstants.js";
 
 export default class BookController {
 	async addBook(req, res, imageName) {
-		const data = await bookModel.create({ ...req.body, image: imageName });
-		console.log(data);
-		if (data) {
-			res.json(data);
-		} else {
-			res.json({
+		try {
+			const data = await bookModel.create({
+				...req.body,
+				image: imageName,
+			});
+			console.log(data);
+			if (data) {
+				res.json(data);
+			} else {
+				res.json({
+					success: false,
+					message: "Error during adding the book.",
+				});
+			}
+		} catch (err) {
+			return res.json({
 				success: false,
-				message: "Error during adding the book.",
+				message: "Error while Quering in Database",
 			});
 		}
 	}
@@ -25,7 +37,10 @@ export default class BookController {
 				res.json([]);
 			}
 		} else {
-			res.json({ success: false, message: "Book ID not provided." });
+			res.json({
+				success: false,
+				message: textConstants.BOOK_ID_NOT_PROVIDED,
+			});
 		}
 	}
 
@@ -43,7 +58,10 @@ export default class BookController {
 				res.json({ success: false, message: "Couldn't Update Book" });
 			}
 		} else {
-			res.json({ success: false, message: "Book ID not provided." });
+			res.json({
+				success: false,
+				message: textConstants.BOOK_ID_NOT_PROVIDED,
+			});
 		}
 	}
 
@@ -63,7 +81,10 @@ export default class BookController {
 				res.json({ success: false, message: "Couldn't Delete Book" });
 			}
 		} else {
-			res.json({ success: false, message: "Book ID not provided." });
+			res.json({
+				success: false,
+				message: textConstants.BOOK_ID_NOT_PROVIDED,
+			});
 		}
 	}
 
@@ -81,8 +102,12 @@ export default class BookController {
 						},
 					},
 				},
+				raw: true,
 			});
 			console.log(data);
+			for (let d of data) {
+				d.image = urlConstants.IMG_PATH_URL + d.image;
+			}
 			res.json(data);
 		} else
 			res.json({ success: false, message: "Empty Query Search String." });
@@ -93,13 +118,18 @@ export default class BookController {
 		if (!limit) {
 			limit = 20;
 		}
-		const data = await bookModel.findAll({
-			limit: limit,
-		});
-		for(let d of data){
-			d.dataValues.image="http://localhost:8000/uploads/"+d.dataValues.image;
+		try {
+			const data = await bookModel.findAll({
+				limit: parseInt(limit),
+				raw: true,
+			});
+			for (let d of data) {
+				d.image = urlConstants.IMG_PATH_URL + d.image;
+			}
+			console.log(data);
+			res.json(data);
+		} catch (err) {
+			res.json({ success: false, message: err });
 		}
-		console.log(data)
-		res.json(data);
 	}
 }
